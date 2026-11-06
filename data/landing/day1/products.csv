@@ -1,0 +1,5 @@
+product_id,product_name,category,unit_price,updated_at
+101,Basmati Rice 5kg,Grocery,649.00,2026-01-01 08:00:00
+102,Filter Coffee 500g,Beverages,325.00,2026-01-01 08:00:00
+103,Steel Tiffin Box,Home,899.00,2026-01-01 08:00:00
+104,Cotton Saree,Apparel,-10.00,2026-01-01 08:00:00

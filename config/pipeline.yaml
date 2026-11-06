@@ -1,0 +1,65 @@
+# One file drives every table. Add a table by adding an entry - no new code.
+defaults:
+  source_root: ..            # relative paths below resolve from the repo root
+  source_format: csv
+  source_options:
+    header: true
+
+tables:
+  - name: customers
+    source:
+      path: data/landing/{batch}/customers.csv
+    target: silver/dim_customer
+    load_type: scd2                 # keep full history of attribute changes
+    keys: [customer_id]
+    watermark_column: updated_at    # rows at or before the last watermark are skipped
+    track_columns: [name, email, city, segment]
+    schema:
+      customer_id: int
+      name: string
+      email: string
+      city: string
+      segment: string
+      updated_at: timestamp
+    quality:
+      - name: email_present
+        rule: email IS NOT NULL
+      - name: email_format
+        rule: email RLIKE '^[^@ ]+@[^@ ]+[.][^@ ]+$'
+
+  - name: products
+    source:
+      path: data/landing/{batch}/products.csv
+    target: silver/dim_product
+    load_type: scd1                 # overwrite in place, no history
+    keys: [product_id]
+    watermark_column: updated_at
+    schema:
+      product_id: int
+      product_name: string
+      category: string
+      unit_price: decimal(10,2)
+      updated_at: timestamp
+    quality:
+      - name: positive_price
+        rule: unit_price > 0
+
+  - name: orders
+    source:
+      path: data/landing/{batch}/orders.csv
+    target: silver/fact_orders
+    load_type: insert_only          # facts are immutable; re-sent orders are ignored
+    keys: [order_id]
+    watermark_column: order_ts
+    schema:
+      order_id: bigint
+      customer_id: int
+      product_id: int
+      quantity: int
+      amount: decimal(12,2)
+      order_ts: timestamp
+    quality:
+      - name: positive_quantity
+        rule: quantity > 0
+      - name: positive_amount
+        rule: amount > 0
